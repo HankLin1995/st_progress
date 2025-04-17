@@ -48,9 +48,9 @@ def main_zh():
 
         st.session_state['data']=sample_data
 
-    col1, col2 = st.columns([1, 2])
+    col11, col12 = st.columns([1, 2])
 
-    with col1:
+    with col11:
 
         st.markdown("### :spiral_calendar_pad: 工程進度甘特圖 V0.1.0")
         st.info("作者: HankLin  ,  [作者聯絡資訊](https://hanksvba.com)")
@@ -61,21 +61,59 @@ def main_zh():
         # 總表（編輯方式），回饋到 st.session_state
         st.markdown("##### 	:point_down: 施工項目填寫")
 
-        df=pd.DataFrame(st.session_state['data'])
-
+        df = pd.DataFrame(st.session_state['data'])
         df['起始日期'] = pd.to_datetime(df['起始日期'])
 
-        edited_df = st.data_editor(df, use_container_width=True,num_rows='dynamic',
-                                column_config={
-                                    "起始日期": st.column_config.DateColumn(
-                                        "起始日期",
-                                        min_value=date(2024, 1, 1),
-                                        max_value=date(2030, 1, 1),
-                                        format="YYYY-MM-DD",
-                                        step=1,
-                                    )
-                                },
-                                hide_index=True, column_order=("項目名稱", "花費金額", "起始日期", "持續天數"))
+        # 添加選擇欄位
+        df['選擇'] = False
+
+        edited_df = st.data_editor(
+            df,
+            use_container_width=True,
+            num_rows='dynamic',
+            column_config={
+                "選擇": st.column_config.CheckboxColumn(
+                    "選擇",
+                    help="選擇要移動的項目",
+                    default=False
+                ),
+                "起始日期": st.column_config.DateColumn(
+                    "起始日期",
+                    min_value=date(2024, 1, 1),
+                    max_value=date(2030, 1, 1),
+                    format="YYYY-MM-DD",
+                    step=1,
+                )
+            },
+            hide_index=True,
+            column_order=("選擇", "項目名稱", "花費金額", "起始日期", "持續天數")
+        )
+
+        # 上移和下移按鈕
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("⬆️ 上移選擇的項目",use_container_width=True):
+                selected_indices = edited_df.index[edited_df['選擇']].tolist()
+                if selected_indices:
+                    data_list = edited_df.to_dict('records')
+                    for idx in selected_indices:
+                        if idx > 0:  # 確保不是第一個項目
+                            # 交換位置
+                            data_list[idx], data_list[idx-1] = data_list[idx-1], data_list[idx]
+                    st.session_state['data'] = data_list
+                    st.rerun()
+
+        with col2:
+            if st.button("⬇️ 下移選擇的項目",use_container_width=True):
+                selected_indices = edited_df.index[edited_df['選擇']].tolist()
+                if selected_indices:
+                    data_list = edited_df.to_dict('records')
+                    for idx in reversed(selected_indices):  # 從後面開始處理
+                        if idx < len(data_list) - 1:  # 確保不是最後一個項目
+                            # 交換位置
+                            data_list[idx], data_list[idx+1] = data_list[idx+1], data_list[idx]
+                    st.session_state['data'] = data_list
+                    st.rerun()
 
         edited_df['結束日期'] = edited_df['起始日期'] + pd.to_timedelta(edited_df['持續天數'], unit='D')
 
@@ -114,7 +152,7 @@ def main_zh():
             '累積進度': cumulative_progress
         })
 
-    with col2:
+    with col12:
 
         fig, ax1 = plt.subplots(figsize=(14, 10))
 
@@ -190,7 +228,15 @@ def main_zh():
                 df.to_excel(writer, index=False, sheet_name='Progress Data')
             return output.getvalue()
 
-
+        excel_data_bytes = to_excel(excel_data)
+        # 下載進度資料的 Excel 按鈕
+        st.download_button(
+            label="下載進度資料 Excel",
+            use_container_width=True,
+            data=excel_data_bytes,
+            file_name='progress_data.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
     # 提供下載按鈕
 
     with col1:
@@ -202,19 +248,20 @@ def main_zh():
         #     mime='text/csv'
         # )
 
-        # 下載 Excel 按鈕
-        excel_data_bytes = to_excel(excel_data)
-        # 下載進度資料的 Excel 按鈕
-        st.download_button(
-            label="下載進度資料 Excel",
-            data=excel_data_bytes,
-            file_name='progress_data.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
+        # # 下載 Excel 按鈕
+        # excel_data_bytes = to_excel(excel_data)
+        # # 下載進度資料的 Excel 按鈕
+        # st.download_button(
+        #     label="下載進度資料 Excel",
+        #     data=excel_data_bytes,
+        #     file_name='progress_data.xlsx',
+        #     mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        # )
 
         # 下載工程項目資料的按鈕
         project_data = pd.DataFrame(st.session_state['data'])
         project_excel = to_excel(project_data)
+
         st.download_button(
             label="下載工程項目資料",
             data=project_excel,
