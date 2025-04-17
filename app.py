@@ -8,6 +8,21 @@ import matplotlib.ticker as ticker
 from datetime import date
 from io import BytesIO
 
+@st.dialog("匯入工程項目資料")
+def import_data():
+    uploaded_file = st.file_uploader("匯入工程項目資料", type=['xlsx'])
+    if uploaded_file is not None:
+        try:
+            imported_df = pd.read_excel(uploaded_file)
+            if set(imported_df.columns) == set(['項目名稱', '花費金額', '起始日期', '持續天數', '結束日期']):
+                st.session_state['data'] = imported_df.to_dict('records')
+                st.success('成功匯入資料！')
+                st.rerun()
+            else:
+                st.error('檔案格式不正確，請確保包含正確的欄位名稱')
+        except Exception as e:
+            st.error(f'讀取檔案時發生錯誤: {str(e)}')
+
 def main_zh():
     
     ### Init ###
@@ -160,20 +175,20 @@ def main_zh():
     # csv_data['date'] = csv_data['date'].dt.strftime('%Y-%m-%d')  # 將日期轉換為字串格式
     # csv_string = csv_data.to_csv(index=False, encoding='utf-8-sig')
 
-    # 產生 Excel 資料
-    excel_data = pd.DataFrame({
-        'date': date_range,
-        'progress(%)': daily_progress/100,
-        'sum_progress(%)': cumulative_progress/100
-    })
-    excel_data['date'] = excel_data['date'].dt.strftime('%Y-%m-%d')  # 將日期轉換為字串格式
+        # 產生 Excel 資料
+        excel_data = pd.DataFrame({
+            'date': date_range,
+            'progress(%)': daily_progress/100,
+            'sum_progress(%)': cumulative_progress/100
+        })
+        excel_data['date'] = excel_data['date'].dt.strftime('%Y-%m-%d')  # 將日期轉換為字串格式
 
-    # 將 DataFrame 轉換為 Excel 格式
-    def to_excel(df):
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, index=False, sheet_name='Progress Data')
-        return output.getvalue()
+        # 將 DataFrame 轉換為 Excel 格式
+        def to_excel(df):
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False, sheet_name='Progress Data')
+            return output.getvalue()
 
 
     # 提供下載按鈕
@@ -189,13 +204,26 @@ def main_zh():
 
         # 下載 Excel 按鈕
         excel_data_bytes = to_excel(excel_data)
+        # 下載進度資料的 Excel 按鈕
         st.download_button(
-            label="下載 Excel 檔案",
+            label="下載進度資料 Excel",
             data=excel_data_bytes,
             file_name='progress_data.xlsx',
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
 
+        # 下載工程項目資料的按鈕
+        project_data = pd.DataFrame(st.session_state['data'])
+        project_excel = to_excel(project_data)
+        st.download_button(
+            label="下載工程項目資料",
+            data=project_excel,
+            file_name='project_data.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        if st.button("匯入工程項目資料", on_click=import_data):
+            pass
 
 if __name__ == "__main__":
     

@@ -38,7 +38,7 @@ rich==13.7.1
 rpds-py==0.18.1
 six==1.16.0
 smmap==5.0.1
-streamlit==1.36.0
+streamlit
 tenacity==8.4.2
 toml==0.10.2
 toolz==0.12.1
@@ -49,3 +49,4 @@ urllib3==2.2.2
 watchdog==4.0.1
 XlsxWriter==3.2.0
 zipp==3.19.2
+openpyxl==3.1.5
