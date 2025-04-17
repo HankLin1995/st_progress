@@ -52,7 +52,7 @@ def main_zh():
 
     with col11:
 
-        st.markdown("### :spiral_calendar_pad: 工程進度甘特圖 V0.1.0")
+        st.markdown("### :spiral_calendar_pad: 工程進度甘特圖 V0.2.0")
         st.info("作者: HankLin  ,  [作者聯絡資訊](https://hanksvba.com)")
         with st.expander(":tv: 影片操作教學"):
             st.video("demo.mp4")
